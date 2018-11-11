@@ -71,7 +71,10 @@ class Medicines:
                 for drug in lis:
                     description = self.delete_tags(
                         str(drug),
-                        '<li>', '</li>', '<b>', '</b>')
+                        '<li>', '</li>', '<b>', '</b>', '<i>', '</i>',
+                        '</sup>')
+
+                    description = description.replace('<sup>', '^')
 
                     first_letter = description[0].upper()
 
