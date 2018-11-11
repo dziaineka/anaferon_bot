@@ -81,7 +81,8 @@ class Medicines:
                     try:
                         if (alphabet.index(first_letter) <
                                 alphabet.index(prev_first_letter)):
-                            continue
+                            pass
+                            # continue
 
                         prev_first_letter = first_letter
                     except ValueError:  # название не на русском и пошло оно
