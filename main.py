@@ -42,7 +42,9 @@ async def cmd_start(message: types.Message):
 async def process_text(message: types.Message):
     medicine = message.text.strip()
 
-    logging.info('Спросили ' + medicine + '.')
+    logging.info('Пользователь ' + str(message.from_user.id) +
+                 ' cпросил ' + medicine + '.')
+
     descriptions = medicines.get_descriptions(medicine)
 
     for descr in descriptions:
