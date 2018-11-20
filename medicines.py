@@ -11,6 +11,7 @@ class Medicines:
         self.a_tag_regexp = re.compile(regexps.A_TAGS, re.IGNORECASE)
         self.href_regexp = re.compile(regexps.HREF, re.IGNORECASE)
         self.wiki_regexp = re.compile(regexps.WIKI, re.IGNORECASE)
+        self.ul_regexp = re.compile(regexps.UL, re.MULTILINE | re.IGNORECASE)
         self.MAIN_URL = 'http://encyclopatia.ru'
         self.medicines = []
 
@@ -55,41 +56,69 @@ class Medicines:
 
         return text
 
+    def tags_processing(self, text):
+        description = self.delete_tags(
+            text,
+            '<li>', '</li>', '<b>', '</b>', '<i>', '</i>',
+            '</sup>')
+
+        description = description.replace('<del>', '(')
+        description = description.replace('</del>', ')')
+
+        description = description.replace('<sup>', '^')
+
+        return description
+
+    def process_http_description(self, text):
+        description = self.tags_processing(text)
+        description = self.extract_urls_from_a_tags(description)
+
+        return description
+
+    def split_ul(self, text):
+        uls = self.ul_regexp.findall(text)
+        return_list = []
+
+        for ul in uls:
+            text = text.replace(ul, '')
+            ul = self.delete_tags(ul, '<ul>', '</ul>')
+            return_list.append(ul)
+
+        return_list.append(text)
+
+        return return_list
+
     def get_all_drugs(self, html):
         return_list = []
 
         soup = BeautifulSoup(html, 'lxml')
         div = soup.find('div', id='mw-content-text')
         uls = div.find_all('ul', class_=None)
-        alphabet = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
-        prev_first_letter = 'А'
 
         for ul in uls:
             lis = ul.find_all('li', class_=None)
 
             if lis:
                 for drug in lis:
-                    description = self.delete_tags(
-                        str(drug),
-                        '<li>', '</li>', '<b>', '</b>', '<i>', '</i>',
-                        '</sup>')
-
-                    description = description.replace('<sup>', '^')
-
-                    first_letter = description[0].upper()
-
-                    try:
-                        if (alphabet.index(first_letter) <
-                                alphabet.index(prev_first_letter)):
-                            pass
-                            # continue
-
-                        prev_first_letter = first_letter
-                    except ValueError:  # название не на русском и пошло оно
-                        continue
-
-                    description = self.extract_urls_from_a_tags(description)
+                    description = self.process_http_description(str(drug))
                     return_list.append(description)
+
+        # по какой-то мне неведомой причине попадаются склеенные позиции
+        # попробую их расклеить
+        temp_list = []
+        return_list.sort()
+
+        for description in return_list:
+            descrs = self.split_ul(description)
+
+            while return_list.remove(description):
+                pass
+
+            for desc in descrs:
+                temp_list.append(desc)
+
+        return_list.extend(temp_list)
+        return_list = list(set(return_list))
 
         return return_list
 
